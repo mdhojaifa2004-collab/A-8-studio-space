@@ -74,7 +74,7 @@ export default function ProfileEditPage() {
           You need to sign in to edit your profile.
         </p>
         <Link
-          href="/sign-in"
+          href="/auth/sign-in"
           className="rounded-lg bg-[#ff263f] px-6 py-3 font-semibold text-white hover:bg-red-600"
         >
           Sign In

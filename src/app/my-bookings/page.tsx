@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { backendUrl } from "@/app/lib/api";
 
 type Booking = {
   _id: string;
@@ -18,13 +19,9 @@ type Booking = {
 
 type ToastType = "success" | "error";
 
-// Base URL of the Express API (same env var used on the home page).
-// Falls back to the legacy dev listener on port 8000.
-const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
-).replace(/\/+$/, "");
-
-const API_URL = `${API_BASE_URL}/my-bookings`;
+// Same-origin proxy to the Express API. The Better Auth cookie is forwarded
+// to the backend by the Next.js rewrite configured in next.config.ts.
+const API_URL = backendUrl("/my-bookings");
 
 export default function MyBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -62,8 +59,10 @@ export default function MyBookingsPage() {
       setError("");
 
       const response = await fetch(API_URL, {
-        // Send the Better Auth session cookie to the API server.
+        // Send the Better Auth session cookie to the API server and never
+        // serve a stale cached list after create/update/cancel.
         credentials: "include",
+        cache: "no-store",
       });
 
       if (!response.ok) {

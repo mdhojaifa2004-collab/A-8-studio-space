@@ -19,7 +19,7 @@ export default function PrivateRoute({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isPending && !session?.user) {
       router.replace(
-        `/login?callbackUrl=${encodeURIComponent(pathname)}`,
+        `/auth/sign-in?callbackURL=${encodeURIComponent(pathname)}`,
       );
     }
   }, [isPending, session, pathname, router]);

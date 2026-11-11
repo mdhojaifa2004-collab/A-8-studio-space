@@ -10,10 +10,6 @@ type Props = {
 export default async function StudioDetailsPage({ params }: Props) {
   const { id } = await params;
 
-  const token = await auth.api.getToken({
-    headers: await headers(),
-  })
-
   const session = await auth.api.getSession({
     headers: await headers(),
   });

@@ -2,13 +2,9 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-
-// Base URL of the Express API (same env var used on the home page).
-// Falls back to the legacy dev listener on port 8000.
-const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
-).replace(/\/+$/, "");
+import { backendUrl } from "@/app/lib/api";
 
 type BookNowButtonProps = {
   studioId: string;
@@ -35,6 +31,7 @@ export default function BookNowButton({
   currency,
   onSuccess,
 }: BookNowButtonProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const submittingRef = useRef(false);
 
@@ -64,19 +61,16 @@ export default function BookNowButton({
         createdAt: new Date().toISOString(),
       };
 
-      const response = await fetch(
-        `${API_BASE_URL}/my-bookings`,
-        {
-          method: "POST",
-          // Required for cross-origin requests (localhost:3000 -> localhost:8000)
-          // so the Better Auth session cookie is sent to the backend.
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(bookingData),
-        }
-      );
+      const response = await fetch(backendUrl("/my-bookings"), {
+        method: "POST",
+        // Same-origin request through the Next.js proxy, so the Better Auth
+        // session cookie is sent and then forwarded to the Express backend.
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(bookingData),
+      });
 
       const raw = await response.text();
 
@@ -85,6 +79,16 @@ export default function BookNowButton({
         result = raw ? JSON.parse(raw) : null;
       } catch {
         result = null;
+      }
+
+      if (response.status === 401) {
+        toast.error("Please sign in to book a studio.");
+        router.push(
+          `/auth/sign-in?callbackURL=${encodeURIComponent(
+            window.location.pathname
+          )}`
+        );
+        return;
       }
 
       if (!response.ok) {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { authClient } from "@/app/lib/auth-client";
+import OAuthErrorAlert from "@/app/component/components/OAuthErrorAlert";
 import { toast } from "sonner";
 
 export default function SignInPage() {
@@ -14,6 +15,7 @@ export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -53,6 +55,41 @@ export default function SignInPage() {
       toast.error("Sign in failed. Please check your email and password.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    if (googleLoading) return;
+
+    setGoogleLoading(true);
+
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const callbackURL = params.get("callbackURL");
+
+      const safeCallbackURL =
+        callbackURL &&
+        callbackURL.startsWith("/") &&
+        !callbackURL.startsWith("//")
+          ? callbackURL
+          : "/";
+
+      const result = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: safeCallbackURL,
+        errorCallbackURL: "/auth/sign-in",
+      });
+
+      if (result?.error) {
+        toast.error(
+          result.error.message || "Google sign in failed. Please try again."
+        );
+      }
+    } catch (error) {
+      console.error("Google sign in error:", error);
+      toast.error("Google sign in failed. Please try again.");
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -112,6 +149,8 @@ export default function SignInPage() {
           >
             Studio<span className="text-[#ff263f]">Space</span>
           </Link>
+
+          <OAuthErrorAlert />
 
           <div className="mb-8">
             <p className="mb-3 text-xs font-bold uppercase tracking-[3px] text-[#ff263f]">
@@ -204,11 +243,24 @@ export default function SignInPage() {
 
           </form>
 
+          {/* Google OAuth */}
+          <div className="mt-5">
+            <button
+              type="button"
+              onClick={handleGoogle}
+              disabled={googleLoading}
+              className="btn w-full bg-white text-black border-[#e5e5e5] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <svg aria-label="Google logo" width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><g><path d="m0 0H512V512H0" fill="#fff"></path><path fill="#34a853" d="M153 292c30 82 118 95 171 60h62v48A192 192 0 0190 341"></path><path fill="#4285f4" d="m386 400a140 175 0 0053-179H260v74h102q-7 37-38 57"></path><path fill="#fbbc02" d="m90 341a208 200 0 010-171l63 49q-12 37 0 73"></path><path fill="#ea4335" d="m153 219c22-69 116-109 179-50l55-54c-78-75-230-72-297 55"></path></g></svg>
+              {googleLoading ? "Redirecting..." : "Continue with Google"}
+            </button>
+          </div>
+
           {/* Sign Up */}
           <p className="mt-8 text-center text-sm text-gray-400">
             Don&apos;t have an account?{" "}
             <Link
-              href="/sign-up"
+              href="/auth/sign-up"
               className="font-bold text-[#ff263f] transition hover:text-red-400"
             >
               Create Account
