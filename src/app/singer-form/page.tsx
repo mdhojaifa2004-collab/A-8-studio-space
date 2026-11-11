@@ -123,7 +123,7 @@ export default function SingerFormPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/singer-form", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/singer-form`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
